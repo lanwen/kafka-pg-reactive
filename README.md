@@ -14,6 +14,11 @@ then
 
 `docker run -it --rm app -Dproducer.kafka.bootstrap.servers=<...> <producer.jar|consumer.jar>`
 
-### Settings
+### Settings required
 
+#### Producer
 - `producer.kafka.bootstrap.servers`
+
+#### Consumer
+- `consumer.kafka.bootstrap.servers`
+- `consumer.pg.connection` - in form of `r2dbc:postgresql://<usr>:<pwd>@<host>:<port>/<db>`
