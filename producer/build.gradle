@@ -1,0 +1,18 @@
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'application'
+
+mainClassName = "ru.lanwen.kpr.Application"
+
+tasks.withType(JavaCompile){
+    options.encoding = "UTF-8"
+    options.compilerArgs += '-parameters'
+    options.compilerArgs += '--enable-preview' // for records
+}
+
+tasks.withType(Test) {
+    jvmArgs += "--enable-preview"
+}
+
+dependencies {
+    testImplementation "org.testcontainers:kafka"
+}

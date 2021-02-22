@@ -1,0 +1,5 @@
+rootProject.name="kafka-pg-reactive"
+
+include 'producer'
+include 'consumer'
+
