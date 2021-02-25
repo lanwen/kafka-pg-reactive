@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  producer:
+    build: .
+    environment:
+      producer_kafka_bootstrap_servers: ${kafka_bootstrap_servers}
+      producer_kafka_security_protocol: ${kafka_security_protocol}
+      producer_kafka_key_pwd: ${kafka_key_pwd}
+    volumes:
+      - ./certs/:/certs/
+    command: producer.jar
+
+  consumer:
+    build: .
+    environment:
+      consumer_kafka_bootstrap_servers: ${kafka_bootstrap_servers}
+      consumer_kafka_security_protocol: ${kafka_security_protocol}
+      consumer_kafka_key_pwd: ${kafka_key_pwd}
+      consumer_pg_connection: r2dbc:${pg_connection_string}
+    volumes:
+      - ./certs/:/certs/
+    command: consumer.jar
+

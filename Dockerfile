@@ -1,5 +1,8 @@
 FROM adoptopenjdk:15-jdk-hotspot as build
 WORKDIR /code
+COPY ./gradle/ ./gradle/
+COPY ./gradlew ./gradlew
+RUN ./gradlew wrapper
 COPY . .
 RUN ./gradlew build -x test
 

@@ -17,7 +17,7 @@ public class MetricsProducer {
 
     private KafkaSender sender;
 
-    public MetricsProducer(String bootstrapServers) {
+    public MetricsProducer(String bootstrapServers, String secProtocol, String pwd) {
         Map<String, Object> props = new HashMap<>(Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.CLIENT_ID_CONFIG, "metrics-producer",
@@ -25,6 +25,19 @@ public class MetricsProducer {
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class
         ));
+
+        if ("ssl".equals(secProtocol)) {
+            props.putAll(Map.of(
+                    "security.protocol", "SSL",
+                    "ssl.endpoint.identification.algorithm", "",
+                    "ssl.truststore.location", "./certs/kafka/client.truststore.jks",
+                    "ssl.truststore.password", pwd,
+                    "ssl.keystore.type", "PKCS12",
+                    "ssl.keystore.location", "./certs/kafka/client.keystore.p12",
+                    "ssl.keystore.password", pwd,
+                    "ssl.key.password", pwd
+            ));
+        }
         sender = KafkaSender.create(SenderOptions.create(props));
     }
 

@@ -21,7 +21,7 @@ class ProducerTest {
 
     @Test
     void shouldPublishToKafka() throws UnknownHostException {
-        var published = new MetricsProducer(kafka.getBootstrapServers())
+        var published = new MetricsProducer(kafka.getBootstrapServers(), "plain", "")
                 .publish(
                         "metrics",
                         InetAddress.getLocalHost().getHostName(),

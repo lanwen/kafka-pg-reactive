@@ -18,7 +18,7 @@ public class MetricsConsumer {
 
     ReceiverOptions<String, String> receiverOptions;
 
-    public MetricsConsumer(String bootstrapServers) {
+    public MetricsConsumer(String bootstrapServers, String secProtocol, String pwd) {
         Map<String, Object> props = new HashMap<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ConsumerConfig.CLIENT_ID_CONFIG, "metrics-consumer",
@@ -27,6 +27,19 @@ public class MetricsConsumer {
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
         ));
+
+        if ("ssl".equals(secProtocol)) {
+            props.putAll(Map.of(
+                    "security.protocol", "SSL",
+                    "ssl.endpoint.identification.algorithm", "",
+                    "ssl.truststore.location", "./certs/kafka/client.truststore.jks",
+                    "ssl.truststore.password", pwd,
+                    "ssl.keystore.type", "PKCS12",
+                    "ssl.keystore.location", "./certs/kafka/client.keystore.p12",
+                    "ssl.keystore.password", pwd,
+                    "ssl.key.password", pwd
+            ));
+        }
         receiverOptions = ReceiverOptions.create(props);
     }
 
@@ -45,7 +58,9 @@ public class MetricsConsumer {
                 })
                 .doOnNext(record -> record.receiverOffset().acknowledge())
                 .sample(Duration.ofSeconds(5)) // explicitly commit once per 5 sec
-                .delayUntil(record -> record.receiverOffset().commit())
+                .delayUntil(record -> record.receiverOffset().commit()
+                        .doFirst(() -> LOG.info("commit metrics position {}:{}:{}", record.topic(), record.partition(), record.offset()))
+                )
                 .then();
     }
 }

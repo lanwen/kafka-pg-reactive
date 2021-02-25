@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PostgresWriter {
 
-    Mono<Connection> connection;
+    Mono<? extends Connection> connection;
 
     public PostgresWriter(String connstring) {
         var connectionFactory = ConnectionFactories.get(connstring);
@@ -18,16 +18,20 @@ public class PostgresWriter {
 
     public Mono<Void> prepareTable() {
         return connection
-                .flatMapMany(conn -> conn
-                        .createStatement("""
-                                CREATE TABLE IF NOT EXISTS metrics (
-                                    timestamp bigint NOT NULL,
-                                	host TEXT NOT NULL,
-                                 	metric TEXT NOT NULL,
-                                  	value DOUBLE PRECISION NULL
-                                );
-                                """)
-                        .execute()
+                .flatMapMany(conn -> Flux
+                        .from(conn
+                                .createStatement("""
+                                        CREATE TABLE IF NOT EXISTS metrics (
+                                            timestamp bigint NOT NULL,
+                                        	host TEXT NOT NULL,
+                                         	metric TEXT NOT NULL,
+                                          	value DOUBLE PRECISION NULL
+                                        );
+                                        """)
+                                .execute()
+                        )
+                        .delayUntil(result -> result.getRowsUpdated())
+                        .then(Mono.from(conn.close()))
                 )
                 .then();
     }
@@ -45,9 +49,10 @@ public class PostgresWriter {
                             .add()
                     );
 
-                    return Flux.from(statement.execute());
+                    return Flux.from(statement.execute())
+                            .delayUntil(result -> result.getRowsUpdated()) // to wait until result arrives
+                            .then(Mono.from(conn.close()));
                 })
-                .flatMap(result -> Mono.from(result.getRowsUpdated()))
                 .then();
     }
 }

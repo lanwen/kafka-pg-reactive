@@ -12,15 +12,20 @@ import java.util.stream.Collectors;
 public class Application {
 
     public static final String KAFKA_BOOTSTRAP_SERVERS_PROPERTY = "producer.kafka.bootstrap.servers";
-    public static final String PRODUCER_TOPIC_NAME_PROPERTY = "producer.topic.name";
+    public static final String PRODUCER_KAFKA_SECURITY_PROTOCOL_PROPERTY = "producer.kafka.security.protocol";
+    public static final String PRODUCER_KAFKA_KEY_PWD_PROPERTY = "producer.kafka.key.pwd";
+    public static final String PRODUCER_KAFKA_TOPIC_NAME_PROPERTY = "producer.kafka.topic.name";
     public static final String PRODUCER_INTERVAL_SECONDS_PROPERTY = "producer.interval.seconds";
 
     public static void main(String[] args) throws UnknownHostException {
-        var servers = Objects.requireNonNull(System.getProperty(KAFKA_BOOTSTRAP_SERVERS_PROPERTY), "property " + KAFKA_BOOTSTRAP_SERVERS_PROPERTY + " should be defined");
-        var topic = System.getProperty(PRODUCER_TOPIC_NAME_PROPERTY, "metrics");
-        var interval = Duration.ofSeconds(Integer.parseInt(System.getProperty(PRODUCER_INTERVAL_SECONDS_PROPERTY, "1")));
+        var topic = conf(PRODUCER_KAFKA_TOPIC_NAME_PROPERTY, "metrics");
+        var interval = Duration.ofSeconds(Integer.parseInt(conf(PRODUCER_INTERVAL_SECONDS_PROPERTY, "1")));
 
-        var producer = new MetricsProducer(servers);
+        var producer = new MetricsProducer(
+                conf(KAFKA_BOOTSTRAP_SERVERS_PROPERTY, null),
+                conf(PRODUCER_KAFKA_SECURITY_PROTOCOL_PROPERTY, "plain"),
+                conf(PRODUCER_KAFKA_KEY_PWD_PROPERTY, "")
+        );
         var metrics = new MetricsProvider();
 
         producer
@@ -40,5 +45,17 @@ public class Application {
                         .collect(Collectors.joining("\n"))
                 )
                 .log("metrics");
+    }
+
+    static String conf(String prop, String defaultValue) {
+        var env = prop.replace(".", "_");
+
+        return defaultValue == null
+                ? Objects
+                .requireNonNull(
+                        System.getProperty(prop, System.getenv(env)),
+                        "property " + prop + " should be defined"
+                )
+                : System.getProperty(prop, System.getenv().getOrDefault(env, defaultValue));
     }
 }
